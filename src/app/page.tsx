@@ -79,7 +79,6 @@ export default function Home() {
           </Button>
         </div>
       </section>
-      <footer className="border-t py-7 text-center text-sm text-muted-foreground">เปิดป้าย อ่านคำ · เครื่องมือเล็ก ๆ เพื่อความมั่นใจที่ยิ่งใหญ่</footer>
     </main>
   );
 }

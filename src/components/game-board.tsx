@@ -2,6 +2,7 @@
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Check, Expand, House, RotateCcw, Shuffle, Sparkles, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Progress } from "@/components/ui/progress";
 import { ThemeSwitcher } from "@/components/theme-provider";
 import { CardThemeSwitcher, useCardTheme } from "@/components/card-theme-switcher";
+import { SCHOOL_LOGO_URL, SCHOOL_NAME } from "@/lib/school";
 
 type CardStatus = "new" | "correct" | "retry";
 type GameCard = { id: number; word: string; opened: boolean; status: CardStatus };
@@ -101,7 +103,7 @@ export function GameBoard({ title: initialTitle, words: initialWords }: { title?
     <main className="min-h-screen bg-muted/35">
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3"><Button asChild variant="ghost" size="icon" aria-label="กลับหน้าแรก"><Link href="/"><House className="size-5" /></Link></Button><div><h1 className="font-semibold">{title}</h1><p className="text-xs text-muted-foreground">เปิดแล้ว {reviewed} จาก {cards.length} คำ</p></div></div>
+          <div className="flex min-w-0 items-center gap-2.5"><Button asChild variant="ghost" size="icon" className="shrink-0" aria-label="กลับหน้าแรก"><Link href="/"><House className="size-5" /></Link></Button><Image src={SCHOOL_LOGO_URL} width={38} height={38} sizes="38px" priority alt={`ตรา${SCHOOL_NAME}`} className="size-9 shrink-0 object-contain" /><div className="min-w-0"><p className="text-[10px] leading-tight font-medium text-muted-foreground sm:text-xs">โรงเรียนวัดบางขุด <span className="whitespace-nowrap">(อุ่นพิทยาคาร)</span></p><h1 className="font-semibold">{title}</h1><p className="text-xs text-muted-foreground">เปิดแล้ว {reviewed} จาก {cards.length} คำ</p></div></div>
           <div className="flex flex-wrap items-center justify-end gap-2"><CardThemeSwitcher /><ThemeSwitcher compact /><Button variant="outline" size="icon" onClick={toggleFullscreen} aria-label="เต็มหน้าจอ"><Expand className="size-4" /></Button><Button variant="outline" size="icon" aria-label="เปิดเสียง"><Volume2 className="size-4" /></Button><Button variant="outline" size="sm" onClick={resetGame}><RotateCcw className="mr-1 size-4" /> เริ่มใหม่</Button></div>
         </div>
         <Progress value={progress} className="h-1 rounded-none" />
