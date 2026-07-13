@@ -6,5 +6,15 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // Refresh and validate auth only where a signed-in account is actually used.
+  // Running getClaims() on public pages delays every client-side navigation.
+  matcher: [
+    "/dashboard/:path*",
+    "/create/:path*",
+    "/settings/:path*",
+    "/sets/:path*",
+    "/admin/:path*",
+    "/pending/:path*",
+    "/auth/update-password/:path*",
+  ],
 };
