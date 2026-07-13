@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { getCurrentAccount } from "@/lib/auth";
+import { ThemeSwitcher } from "@/components/theme-provider";
 
 export async function SiteHeader() {
   const account = await getCurrentAccount();
@@ -15,6 +16,7 @@ export async function SiteHeader() {
           <Link href="/dashboard" className="transition-colors hover:text-foreground">แดชบอร์ด</Link>
         </nav>
         <div className="flex items-center gap-2">
+          <ThemeSwitcher compact />
           {!account && <Button asChild variant="ghost" size="sm"><Link href="/login">เข้าสู่ระบบ</Link></Button>}
           <Button asChild size="sm" className="rounded-full px-5"><Link href={account ? "/dashboard" : "/register"}>{account ? "แดชบอร์ด" : "สมัครสมาชิก"}</Link></Button>
         </div>
