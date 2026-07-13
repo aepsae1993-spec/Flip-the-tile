@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Check, Expand, House, PencilLine, RotateCcw, Shuffle, Sparkles, Volume2 } from "lucide-react";
@@ -67,7 +67,20 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
   });
   const [activeId, setActiveId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const imageUrls = useRef(cards.flatMap((card) => card.imageUrl ? [card.imageUrl] : []));
   const { theme: cardTheme } = useCardTheme();
+
+  useEffect(() => {
+    const preloaders = imageUrls.current.map((src) => {
+      const image = new window.Image();
+      image.decoding = "async";
+      image.src = src;
+      void image.decode().catch(() => undefined);
+      return image;
+    });
+
+    return () => preloaders.forEach((image) => { image.src = ""; });
+  }, []);
 
   const activeCard = cards.find((card) => card.id === activeId) ?? null;
   const reviewed = cards.filter((card) => card.status !== "new").length;
@@ -152,7 +165,7 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
               <span className="card-inner relative block size-full">
                 <span className={`card-face absolute inset-0 grid place-items-center overflow-hidden rounded-2xl border-2 text-3xl font-bold shadow-sm transition-[transform,box-shadow] hover:-translate-y-1 hover:shadow-lg sm:text-4xl ${cardTheme.front}`}><span className={`absolute -right-5 -top-5 size-16 rounded-full ${cardTheme.decoration}`} /><span className={`absolute bottom-3 left-3 size-1.5 rounded-full ${cardTheme.decoration}`} /><span className="relative drop-shadow-sm">{card.id}</span></span>
                 <span className={`card-face card-back absolute inset-0 grid min-w-0 place-items-center overflow-hidden rounded-2xl px-2 text-center font-bold shadow-lg ${card.status === "correct" ? "bg-emerald-600 text-white" : card.status === "retry" ? "bg-amber-400 text-amber-950" : cardTheme.back}`}>
-                  {card.imageUrl ? <span className="relative block size-full overflow-hidden rounded-xl bg-white/95"><Image src={card.imageUrl} alt={card.word} fill className="object-contain p-1.5" sizes="(max-width: 640px) 45vw, 240px" /></span> : <span className="max-w-full break-words text-[clamp(.85rem,2.6vw,2rem)] leading-tight [overflow-wrap:anywhere]">{card.word}</span>}
+                  {card.imageUrl ? <span className="relative block size-full overflow-hidden rounded-xl bg-white/95"><Image src={card.imageUrl} alt={card.word} fill unoptimized loading="eager" decoding="async" className="object-contain p-1.5" sizes="(max-width: 640px) 45vw, 240px" /></span> : <span className="max-w-full break-words text-[clamp(.85rem,2.6vw,2rem)] leading-tight [overflow-wrap:anywhere]">{card.word}</span>}
                   {card.status === "correct" && <Check className="absolute right-2 top-2 z-10 size-5 rounded-full bg-emerald-600 p-0.5 text-white" />}
                 </span>
               </span>
@@ -162,10 +175,10 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl overflow-hidden border-0 p-0 sm:rounded-[2rem]">
+        <DialogContent className="max-w-2xl overflow-hidden border-0 p-0 duration-0 sm:rounded-[2rem]">
           <div className="bg-muted/65 px-6 py-5"><DialogHeader><DialogTitle className="flex items-center justify-center gap-2 text-base text-primary"><Sparkles className="size-4" /> {activeCard?.imageUrl ? "รูปนี้คืออะไร" : "อ่านคำนี้ให้ฟังหน่อย"}</DialogTitle><DialogDescription className="text-center">ป้ายหมายเลข {activeCard?.id}</DialogDescription></DialogHeader></div>
           <div className="grid min-h-56 min-w-0 place-items-center overflow-hidden px-6 py-6">
-            {activeCard?.imageUrl ? <div className="relative h-[min(58vh,32rem)] w-full"><Image src={activeCard.imageUrl} alt={activeCard.word} fill className="object-contain" sizes="(max-width: 768px) 90vw, 672px" priority /></div> : <AutoFitWord word={activeCard?.word ?? ""} />}
+            {activeCard?.imageUrl ? <div className="relative h-[min(58vh,32rem)] w-full"><Image src={activeCard.imageUrl} alt={activeCard.word} fill unoptimized loading="eager" decoding="sync" className="object-contain" sizes="(max-width: 768px) 90vw, 672px" /></div> : <AutoFitWord word={activeCard?.word ?? ""} />}
           </div>
           <div className="grid grid-cols-2 gap-3 border-t bg-muted/35 p-4 sm:p-5"><Button className="h-12 bg-emerald-600 text-base hover:bg-emerald-700" onClick={() => mark("correct")}><Check className="mr-2 size-5" /> {activeCard?.imageUrl ? "ถูก" : "อ่านถูก"}</Button><Button variant="outline" className="h-12 border-amber-400 bg-amber-400/10 text-base text-foreground hover:bg-amber-400/20" onClick={() => mark("retry")}><RotateCcw className="mr-2 size-4" /> ผิด</Button></div>
         </DialogContent>
