@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Expand, House, RotateCcw, Shuffle, Sparkles, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -19,26 +19,11 @@ function shuffle<T>(items: T[]) {
   return copy;
 }
 
-export function GameBoard({ slug }: { slug: string }) {
-  const [title, setTitle] = useState("คำพื้นฐาน ป.1–3");
-  const [cards, setCards] = useState<GameCard[]>(() => defaultWords.map((word, index) => ({ id: index + 1, word, opened: false, status: "new" })));
+export function GameBoard({ title: initialTitle, words: initialWords }: { title?: string; words?: string[] }) {
+  const title = initialTitle ?? "คำพื้นฐาน ป.1–3";
+  const [cards, setCards] = useState<GameCard[]>(() => (initialWords?.length ? initialWords : defaultWords).map((word, index) => ({ id: index + 1, word, opened: false, status: "new" })));
   const [activeId, setActiveId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (slug !== "custom") return;
-    try {
-      const saved = localStorage.getItem("wordflip-custom-set");
-      if (!saved) return;
-      const parsed = JSON.parse(saved) as { title?: string; words?: string[] };
-      if (parsed.title && parsed.words?.length) {
-        queueMicrotask(() => {
-          setTitle(parsed.title!);
-          setCards(parsed.words!.map((word, index) => ({ id: index + 1, word, opened: false, status: "new" })));
-        });
-      }
-    } catch { /* ใช้ชุดตัวอย่างเมื่อข้อมูลในเครื่องไม่สมบูรณ์ */ }
-  }, [slug]);
 
   const activeCard = cards.find((card) => card.id === activeId) ?? null;
   const reviewed = cards.filter((card) => card.status !== "new").length;
