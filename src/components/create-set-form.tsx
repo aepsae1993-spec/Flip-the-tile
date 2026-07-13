@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Eye, Layers3, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Eye, Layers3, LoaderCircle, Sparkles } from "lucide-react";
 import { createWordSetAction, updateWordSetAction } from "@/app/create/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ type InitialSet = { id: string; title: string; grade: string; words: string[] };
 export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [title, setTitle] = useState(initialSet?.title ?? "คำพื้นฐาน ป.1–3");
   const [grade, setGrade] = useState(initialSet?.grade ?? "ป.1–3");
@@ -26,8 +27,17 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
   const words = useMemo(() => rawWords.split(/\r?\n|,/).map((word) => word.trim()).filter(Boolean).slice(0, count), [rawWords, count]);
   const isReady = title.trim().length > 0 && words.length === count;
 
+  useEffect(() => {
+    if (!saved) return;
+    const redirectTimer = window.setTimeout(() => {
+      window.location.assign("/dashboard");
+    }, 1500);
+
+    return () => window.clearTimeout(redirectTimer);
+  }, [saved]);
+
   async function save() {
-    if (!isReady || saving) return;
+    if (!isReady || saving || saved) return;
     setError("");
     setSaving(true);
 
@@ -40,7 +50,7 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
         return;
       }
 
-      window.location.assign(initialSet ? "/dashboard" : `/play/${result.slug}`);
+      setSaved(true);
     } catch {
       setError("เกิดข้อผิดพลาดระหว่างบันทึก กรุณาลองใหม่อีกครั้ง");
     } finally {
@@ -57,10 +67,26 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
           <div className="space-y-3"><Label>จำนวนแผ่นป้าย</Label><div className="flex flex-wrap gap-2">{[...new Set([...countOptions, count])].sort((a, b) => a - b).map((option) => <Button key={option} type="button" variant={count === option ? "default" : "outline"} className="min-w-14" onClick={() => setCount(option)}>{option}</Button>)}</div></div>
           <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor="words">คำศัพท์ (หนึ่งคำต่อหนึ่งบรรทัด)</Label><span className={`text-sm font-medium ${words.length === count ? "text-emerald-600" : "text-muted-foreground"}`}>{words.length} / {count} คำ</span></div><Textarea id="words" value={rawWords} onChange={(event) => setRawWords(event.target.value)} className="min-h-64 resize-y leading-7" />{words.length < count && <p className="text-sm text-amber-700">เพิ่มอีก {count - words.length} คำเพื่อให้ครบจำนวนแผ่น</p>}</div>
           {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-          <div className="flex flex-col-reverse justify-between gap-3 border-t pt-6 sm:flex-row"><Button type="button" variant="ghost" onClick={() => router.back()}><ArrowLeft className="mr-1 size-4" /> ย้อนกลับ</Button><Button type="button" disabled={!isReady || saving} onClick={save}>{saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : initialSet ? <Check className="mr-1 size-4" /> : <ArrowRight className="mr-1 size-4" />}{initialSet ? "บันทึกการแก้ไข" : "บันทึกและเริ่มเล่น"}</Button></div>
+          <div className="flex flex-col-reverse justify-between gap-3 border-t pt-6 sm:flex-row"><Button type="button" variant="ghost" onClick={() => router.back()}><ArrowLeft className="mr-1 size-4" /> ย้อนกลับ</Button><Button type="button" disabled={!isReady || saving || saved} onClick={save}>{saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Check className="mr-1 size-4" />}{initialSet ? "บันทึกการแก้ไข" : "บันทึก"}</Button></div>
         </CardContent>
       </Card>
       <div className="lg:sticky lg:top-24 lg:self-start"><Card className="overflow-hidden border-blue-100"><CardHeader className="bg-blue-50/70"><CardTitle className="flex items-center gap-2 text-base"><Eye className="size-4 text-primary" /> ตัวอย่างแผ่นป้าย</CardTitle></CardHeader><CardContent className="p-5"><div className="grid grid-cols-3 gap-2.5">{Array.from({ length: Math.min(count, 12) }, (_, index) => <div key={index} className="grid aspect-square place-items-center rounded-xl border border-blue-200 bg-blue-50 font-bold text-blue-700">{index + 1}</div>)}</div><div className="mt-5 space-y-3 rounded-xl bg-muted p-4 text-sm"><p className="flex justify-between"><span className="text-muted-foreground">ชื่อชุด</span><span className="max-w-44 truncate font-medium">{title || "ยังไม่ได้ตั้งชื่อ"}</span></p><p className="flex justify-between"><span className="text-muted-foreground">ระดับชั้น</span><span className="font-medium">{grade || "—"}</span></p><p className="flex justify-between"><span className="text-muted-foreground">สถานะ</span><span className={`inline-flex items-center gap-1 font-medium ${isReady ? "text-emerald-600" : "text-amber-700"}`}>{isReady && <Check className="size-3.5" />}{isReady ? "พร้อมบันทึก" : "กำลังกรอก"}</span></p></div></CardContent></Card></div>
+      {saved && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/35 px-4 backdrop-blur-sm" role="status" aria-live="assertive">
+          <div className="relative w-full max-w-sm overflow-hidden rounded-[2rem] border border-emerald-200 bg-background p-8 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+            <Sparkles className="absolute left-8 top-8 size-6 animate-bounce text-amber-400" aria-hidden="true" />
+            <Sparkles className="absolute right-8 top-12 size-4 animate-pulse text-primary" aria-hidden="true" />
+            <div className="mx-auto grid size-24 place-items-center rounded-full bg-emerald-100 ring-8 ring-emerald-50 animate-in zoom-in spin-in-12 duration-500">
+              <CheckCircle2 className="size-14 text-emerald-600" aria-hidden="true" />
+            </div>
+            <h2 className="mt-6 text-2xl font-bold tracking-tight">บันทึกชุดคำสำเร็จ!</h2>
+            <p className="mt-2 text-sm text-muted-foreground">กำลังกลับไปยังแดชบอร์ดครู เพื่อดูชุดคำของคุณ</p>
+            <div className="mx-auto mt-6 h-1.5 w-40 overflow-hidden rounded-full bg-emerald-100">
+              <div className="h-full w-full origin-left animate-[success-progress_1.5s_ease-in-out_forwards] rounded-full bg-emerald-500" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
