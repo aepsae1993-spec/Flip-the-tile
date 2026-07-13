@@ -19,13 +19,14 @@ export default function Home() {
       <section className="relative overflow-hidden bg-grid-soft">
         <div className="absolute -left-32 top-28 size-80 rounded-full bg-blue-200/35 blur-3xl" />
         <div className="absolute -right-20 top-10 size-72 rounded-full bg-sky-200/40 blur-3xl" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.05fr_.95fr] lg:py-28">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.1fr_.9fr] lg:py-28">
           <div>
             <Badge variant="secondary" className="mb-5 rounded-full px-3 py-1.5 text-primary">
               <Sparkles className="mr-1.5 size-3.5" /> เกมฝึกอ่านสำหรับทุกห้องเรียน
             </Badge>
-            <h1 className="max-w-2xl text-4xl font-bold leading-[1.15] tracking-[-.035em] sm:text-5xl lg:text-6xl">
-              พลิกป้าย เปิดคำ<br /><span className="text-primary">สร้างความมั่นใจในการอ่าน</span>
+            <h1 className="max-w-3xl text-4xl font-bold leading-[1.12] tracking-[-.035em] sm:text-5xl lg:text-6xl">
+              <span className="block">พลิกป้าย เปิดคำ</span>
+              <span className="mt-2 block text-[.86em] leading-[1.18] text-primary md:whitespace-nowrap">สร้างความมั่นใจในการอ่าน</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
               ครูสร้างเกมเปิดแผ่นป้ายได้ในไม่กี่นาที กำหนดคำ จำนวนแผ่น และรูปแบบการเล่นเองได้ เด็ก ๆ สนุก ครูใช้ง่าย

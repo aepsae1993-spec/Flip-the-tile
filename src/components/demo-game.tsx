@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FlaskConical, Play, ShieldCheck } from "lucide-react";
+import { FlaskConical, Play } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { GameBoard } from "@/components/game-board";
 import { ThemeSwitcher } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,10 +42,6 @@ export function DemoGame() {
         </div>
 
         <Card className="overflow-hidden">
-          <CardHeader className="border-b bg-muted/35">
-            <CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="size-5 text-emerald-600" />ข้อมูลนี้ไม่ถูกบันทึกลง Supabase</CardTitle>
-            <p className="text-sm text-muted-foreground">คำทั้งหมดอยู่เฉพาะในหน่วยความจำของหน้านี้ และจะหายเมื่อรีเฟรชหรือปิดหน้า</p>
-          </CardHeader>
           <CardContent className="space-y-6 p-5 sm:p-7">
             <div className="space-y-2">
               <Label htmlFor="demo-title">ชื่อชุดคำ</Label>
