@@ -41,16 +41,16 @@ export function WordSetActions({ id, title }: { id: string; title: string }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={`จัดการชุดคำ ${title}`}>
+          <Button variant="ghost" size="icon-sm" aria-label={`จัดการชุดป้าย ${title}`}>
             <MoreHorizontal className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-40">
           <DropdownMenuItem asChild className="py-2">
-            <Link href={`/sets/${id}/edit`}><Pencil className="size-4" />แก้ไขชุดคำ</Link>
+            <Link href={`/sets/${id}/edit`}><Pencil className="size-4" />แก้ไขชุดป้าย</Link>
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" className="py-2" onSelect={() => setOpen(true)}>
-            <Trash2 className="size-4" />ลบชุดคำ
+            <Trash2 className="size-4" />ลบชุดป้าย
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -58,15 +58,15 @@ export function WordSetActions({ id, title }: { id: string; title: string }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>ลบชุดคำนี้หรือไม่</DialogTitle>
-            <DialogDescription>ชุด “{title}” และคำทั้งหมดจะถูกลบถาวร ไม่สามารถย้อนกลับได้</DialogDescription>
+            <DialogTitle>ลบชุดป้ายนี้หรือไม่</DialogTitle>
+            <DialogDescription>ชุด “{title}” และข้อมูลป้ายทั้งหมดจะถูกลบถาวร ไม่สามารถย้อนกลับได้</DialogDescription>
           </DialogHeader>
           {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>ยกเลิก</Button>
             <Button variant="destructive" onClick={remove} disabled={pending}>
               {pending && <LoaderCircle className="mr-2 size-4 animate-spin" />}
-              ลบชุดคำ
+              ลบชุดป้าย
             </Button>
           </DialogFooter>
         </DialogContent>

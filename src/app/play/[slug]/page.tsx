@@ -10,7 +10,7 @@ export default async function PlayPage({ params }: { params: Promise<{ slug: str
   const supabase = await createClient();
   const { data: set } = await supabase.from("word_sets").select("id,title").eq("public_slug", slug).maybeSingle();
   if (!set) notFound();
-  const { data: cards } = await supabase.from("word_cards").select("word_text,position").eq("word_set_id", set.id).order("position");
+  const { data: cards } = await supabase.from("word_cards").select("word_text,image_url,position").eq("word_set_id", set.id).order("position");
   if (!cards?.length) notFound();
-  return <GameBoard title={set.title} words={cards.map((card) => card.word_text)} />;
+  return <GameBoard title={set.title} cards={cards.map((card) => ({ word: card.word_text, imageUrl: card.image_url }))} />;
 }

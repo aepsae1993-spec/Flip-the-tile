@@ -22,6 +22,7 @@ create table if not exists public.word_sets (
   grade_min smallint check (grade_min between 1 and 12),
   grade_max smallint check (grade_max between 1 and 12 and grade_max >= grade_min),
   theme_key text not null default 'sky',
+  content_type text not null default 'word' check (content_type in ('word', 'image')),
   is_published boolean not null default false,
   public_slug text unique,
   created_at timestamptz not null default now(),
@@ -33,6 +34,7 @@ create table if not exists public.word_cards (
   word_set_id uuid not null references public.word_sets(id) on delete cascade,
   position integer not null check (position > 0),
   word_text text not null check (char_length(word_text) between 1 and 160),
+  image_url text,
   hint_text text,
   score integer not null default 1 check (score > 0),
   created_at timestamptz not null default now(),
@@ -74,3 +76,30 @@ using (exists (select 1 from public.word_sets ws where ws.id = word_set_id and w
 with check (exists (select 1 from public.word_sets ws where ws.id = word_set_id and ws.teacher_id = (select auth.uid())));
 create policy "teachers delete cards in own sets" on public.word_cards for delete to authenticated
 using (exists (select 1 from public.word_sets ws where ws.id = word_set_id and ws.teacher_id = (select auth.uid())));
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('card-images', 'card-images', true, 3145728, array['image/webp']::text[])
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+create policy "teachers read own card images" on storage.objects for select to authenticated
+using (bucket_id = 'card-images' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "approved teachers upload card images" on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'card-images'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
+create policy "approved teachers update own card images" on storage.objects for update to authenticated
+using (bucket_id = 'card-images' and owner_id = (select auth.uid())::text)
+with check (
+  bucket_id = 'card-images'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+  and owner_id = (select auth.uid())::text
+);
+create policy "approved teachers delete own card images" on storage.objects for delete to authenticated
+using (
+  bucket_id = 'card-images'
+  and owner_id = (select auth.uid())::text
+);
