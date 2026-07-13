@@ -1,11 +1,29 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
-import { getCurrentAccount } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/client";
 import { ThemeSwitcher } from "@/components/theme-provider";
 
-export async function SiteHeader() {
-  const account = await getCurrentAccount();
+export function SiteHeader() {
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    void supabase.auth.getSession().then(({ data }) => {
+      setSignedIn(Boolean(data.session));
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSignedIn(Boolean(session));
+    });
+
+    return () => data.subscription.unsubscribe();
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -17,8 +35,8 @@ export async function SiteHeader() {
         </nav>
         <div className="flex items-center gap-2">
           <ThemeSwitcher compact />
-          {!account && <Button asChild variant="ghost" size="sm"><Link href="/login">เข้าสู่ระบบ</Link></Button>}
-          <Button asChild size="sm" className="rounded-full px-5"><Link href={account ? "/dashboard" : "/register"}>{account ? "แดชบอร์ด" : "สมัครสมาชิก"}</Link></Button>
+          {!signedIn && <Button asChild variant="ghost" size="sm"><Link href="/login">เข้าสู่ระบบ</Link></Button>}
+          <Button asChild size="sm" className="rounded-full px-5"><Link href={signedIn ? "/dashboard" : "/register"}>{signedIn ? "แดชบอร์ด" : "สมัครสมาชิก"}</Link></Button>
         </div>
       </div>
     </header>

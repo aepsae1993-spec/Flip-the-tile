@@ -8,8 +8,14 @@ export type AccessStatus = "pending" | "approved" | "suspended";
 
 export const getCurrentAccount = cache(async () => {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { data, error } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (error || !claims?.sub) return null;
+
+  const user = {
+    id: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : null,
+  };
 
   const [{ data: access }, { data: profile }] = await Promise.all([
     supabase.from("user_access").select("role,status,email").eq("user_id", user.id).maybeSingle(),
