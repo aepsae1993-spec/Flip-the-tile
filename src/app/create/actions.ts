@@ -32,6 +32,8 @@ export async function createWordSetAction(input: CreateSetInput) {
     await supabase.from("word_sets").delete().eq("id", set.id);
     return { error: "บันทึกคำไม่ครบ ระบบยกเลิกรายการแล้ว กรุณาลองใหม่" };
   }
+  revalidatePath("/dashboard");
+  revalidatePath(`/play/${set.public_slug}`);
   return { slug: set.public_slug };
 }
 

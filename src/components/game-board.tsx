@@ -97,7 +97,33 @@ export function GameBoard({ title: initialTitle, words: initialWords, onEditWord
     if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen();
   }
 
-  const gridClass = useMemo(() => cards.length > 20 ? "grid-cols-4 sm:grid-cols-5 lg:grid-cols-6" : cards.length > 12 ? "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5" : "grid-cols-3 sm:grid-cols-4 lg:grid-cols-4", [cards.length]);
+  const boardLayout = useMemo(() => {
+    if (cards.length === 16) {
+      return {
+        grid: "grid-cols-2 sm:grid-cols-4",
+        card: "aspect-[4/3] sm:aspect-[16/9]",
+      };
+    }
+
+    if (cards.length > 20) {
+      return {
+        grid: "grid-cols-4 sm:grid-cols-5 lg:grid-cols-6",
+        card: "aspect-[4/3]",
+      };
+    }
+
+    if (cards.length > 12) {
+      return {
+        grid: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5",
+        card: "aspect-[4/3]",
+      };
+    }
+
+    return {
+      grid: "grid-cols-3 sm:grid-cols-4",
+      card: "aspect-[4/3]",
+    };
+  }, [cards.length]);
 
   return (
     <main className="min-h-screen bg-muted/35">
@@ -114,9 +140,9 @@ export function GameBoard({ title: initialTitle, words: initialWords, onEditWord
           <div className="flex gap-2"><Badge variant="secondary" className="rounded-full px-3 py-1.5">ทั้งหมด {cards.length}</Badge><Badge className="rounded-full bg-emerald-600 px-3 py-1.5 hover:bg-emerald-600">อ่านถูก {correct}</Badge></div>
           <Button onClick={randomCard} className="rounded-full shadow-md shadow-primary/20"><Shuffle className="mr-2 size-4" /> สุ่มแผ่นป้าย</Button>
         </div>
-        <div className={`grid gap-3 sm:gap-4 ${gridClass}`}>
+        <div className={`grid gap-3 sm:gap-4 ${boardLayout.grid}`}>
           {cards.map((card) => (
-            <button key={card.id} type="button" onClick={() => openCard(card.id)} aria-label={card.opened ? `เปิดคำว่า ${card.word}` : `เปิดป้ายหมายเลข ${card.id}`} className={`card-perspective aspect-[4/3] min-h-24 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 ${card.opened ? "card-flipped" : ""}`}>
+            <button key={card.id} type="button" onClick={() => openCard(card.id)} aria-label={card.opened ? `เปิดคำว่า ${card.word}` : `เปิดป้ายหมายเลข ${card.id}`} className={`card-perspective min-h-24 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 ${boardLayout.card} ${card.opened ? "card-flipped" : ""}`}>
               <span className="card-inner relative block size-full">
                 <span className={`card-face absolute inset-0 grid place-items-center overflow-hidden rounded-2xl border-2 text-3xl font-bold shadow-sm transition-[transform,box-shadow] hover:-translate-y-1 hover:shadow-lg sm:text-4xl ${cardTheme.front}`}><span className={`absolute -right-5 -top-5 size-16 rounded-full ${cardTheme.decoration}`} /><span className={`absolute bottom-3 left-3 size-1.5 rounded-full ${cardTheme.decoration}`} /><span className="relative drop-shadow-sm">{card.id}</span></span>
                 <span className={`card-face card-back absolute inset-0 grid min-w-0 place-items-center overflow-hidden rounded-2xl px-2 text-center font-bold shadow-lg ${card.status === "correct" ? "bg-emerald-600 text-white" : card.status === "retry" ? "bg-amber-400 text-amber-950" : cardTheme.back}`}><span className="max-w-full break-words text-[clamp(.85rem,2.6vw,2rem)] leading-tight [overflow-wrap:anywhere]">{card.word}</span>{card.status === "correct" && <Check className="absolute right-2 top-2 size-5" />}</span>
