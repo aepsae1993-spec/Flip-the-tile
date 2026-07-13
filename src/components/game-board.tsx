@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { ThemeSwitcher } from "@/components/theme-provider";
+import { CardThemeSwitcher, useCardTheme } from "@/components/card-theme-switcher";
 
 type CardStatus = "new" | "correct" | "retry";
 type GameCard = { id: number; word: string; opened: boolean; status: CardStatus };
@@ -58,6 +59,7 @@ export function GameBoard({ title: initialTitle, words: initialWords }: { title?
   const [cards, setCards] = useState<GameCard[]>(() => (initialWords?.length ? initialWords : defaultWords).map((word, index) => ({ id: index + 1, word, opened: false, status: "new" })));
   const [activeId, setActiveId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { theme: cardTheme } = useCardTheme();
 
   const activeCard = cards.find((card) => card.id === activeId) ?? null;
   const reviewed = cards.filter((card) => card.status !== "new").length;
@@ -100,7 +102,7 @@ export function GameBoard({ title: initialTitle, words: initialWords }: { title?
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3"><Button asChild variant="ghost" size="icon" aria-label="กลับหน้าแรก"><Link href="/"><House className="size-5" /></Link></Button><div><h1 className="font-semibold">{title}</h1><p className="text-xs text-muted-foreground">เปิดแล้ว {reviewed} จาก {cards.length} คำ</p></div></div>
-          <div className="flex items-center gap-2"><ThemeSwitcher compact /><Button variant="outline" size="icon" onClick={toggleFullscreen} aria-label="เต็มหน้าจอ"><Expand className="size-4" /></Button><Button variant="outline" size="icon" aria-label="เปิดเสียง"><Volume2 className="size-4" /></Button><Button variant="outline" size="sm" onClick={resetGame}><RotateCcw className="mr-1 size-4" /> เริ่มใหม่</Button></div>
+          <div className="flex flex-wrap items-center justify-end gap-2"><CardThemeSwitcher /><ThemeSwitcher compact /><Button variant="outline" size="icon" onClick={toggleFullscreen} aria-label="เต็มหน้าจอ"><Expand className="size-4" /></Button><Button variant="outline" size="icon" aria-label="เปิดเสียง"><Volume2 className="size-4" /></Button><Button variant="outline" size="sm" onClick={resetGame}><RotateCcw className="mr-1 size-4" /> เริ่มใหม่</Button></div>
         </div>
         <Progress value={progress} className="h-1 rounded-none" />
       </header>
@@ -114,8 +116,8 @@ export function GameBoard({ title: initialTitle, words: initialWords }: { title?
           {cards.map((card) => (
             <button key={card.id} type="button" onClick={() => openCard(card.id)} aria-label={card.opened ? `เปิดคำว่า ${card.word}` : `เปิดป้ายหมายเลข ${card.id}`} className={`card-perspective aspect-[4/3] min-h-24 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 ${card.opened ? "card-flipped" : ""}`}>
               <span className="card-inner relative block size-full">
-                <span className="card-face absolute inset-0 grid place-items-center overflow-hidden rounded-2xl border-2 border-primary/25 bg-card text-3xl font-bold text-primary shadow-sm transition-[transform,box-shadow] hover:-translate-y-1 hover:shadow-lg sm:text-4xl"><span className="absolute -right-5 -top-5 size-16 rounded-full bg-primary/8" /><span className="relative">{card.id}</span></span>
-                <span className={`card-face card-back absolute inset-0 grid min-w-0 place-items-center overflow-hidden rounded-2xl px-2 text-center font-bold shadow-lg ${card.status === "correct" ? "bg-emerald-600 text-white" : card.status === "retry" ? "bg-amber-400 text-amber-950" : "bg-primary text-primary-foreground"}`}><span className="max-w-full break-words text-[clamp(.85rem,2.6vw,2rem)] leading-tight [overflow-wrap:anywhere]">{card.word}</span>{card.status === "correct" && <Check className="absolute right-2 top-2 size-5" />}</span>
+                <span className={`card-face absolute inset-0 grid place-items-center overflow-hidden rounded-2xl border-2 text-3xl font-bold shadow-sm transition-[transform,box-shadow] hover:-translate-y-1 hover:shadow-lg sm:text-4xl ${cardTheme.front}`}><span className={`absolute -right-5 -top-5 size-16 rounded-full ${cardTheme.decoration}`} /><span className={`absolute bottom-3 left-3 size-1.5 rounded-full ${cardTheme.decoration}`} /><span className="relative drop-shadow-sm">{card.id}</span></span>
+                <span className={`card-face card-back absolute inset-0 grid min-w-0 place-items-center overflow-hidden rounded-2xl px-2 text-center font-bold shadow-lg ${card.status === "correct" ? "bg-emerald-600 text-white" : card.status === "retry" ? "bg-amber-400 text-amber-950" : cardTheme.back}`}><span className="max-w-full break-words text-[clamp(.85rem,2.6vw,2rem)] leading-tight [overflow-wrap:anywhere]">{card.word}</span>{card.status === "correct" && <Check className="absolute right-2 top-2 size-5" />}</span>
               </span>
             </button>
           ))}
