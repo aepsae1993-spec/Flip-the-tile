@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const demoWords = ["บัว", "ปลา", "ม้า", "บ้าน", "ดาว", "ทะเล"];
+const demoWords = ["โรงเรียน", "ปลา", "ม้า", "บ้าน", "ดาว", "ทะเล"];
 
 export function MiniFlipDemo() {
   const [opened, setOpened] = useState(1);

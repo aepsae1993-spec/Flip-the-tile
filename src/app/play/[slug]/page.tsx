@@ -7,7 +7,6 @@ export const metadata: Metadata = { title: "เล่นเกม" };
 
 export default async function PlayPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  if (slug === "demo") return <GameBoard />;
   const supabase = await createClient();
   const { data: set } = await supabase.from("word_sets").select("id,title").eq("public_slug", slug).maybeSingle();
   if (!set) notFound();

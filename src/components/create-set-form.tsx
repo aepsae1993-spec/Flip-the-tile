@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 const countOptions = [6, 9, 12, 16, 20, 30];
-const exampleWords = "บัว\nปลา\nม้า\nบ้าน\nทะเล\nโรงเรียน\nดอกไม้\nพระอาทิตย์\nสายรุ้ง\nครอบครัว\nความสุข\nขอบคุณ";
+const exampleWords = "โรงเรียน\nปลา\nม้า\nบ้าน\nทะเล\nห้องเรียน\nดอกไม้\nพระอาทิตย์\nสายรุ้ง\nครอบครัว\nความสุข\nขอบคุณ";
 
 type InitialSet = { id: string; title: string; grade: string; words: string[] };
 
