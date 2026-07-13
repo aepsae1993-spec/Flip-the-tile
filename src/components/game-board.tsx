@@ -163,11 +163,11 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl overflow-hidden border-0 p-0 sm:rounded-[2rem]">
-          <div className="bg-muted/65 px-6 py-5"><DialogHeader><DialogTitle className="flex items-center justify-center gap-2 text-base text-primary"><Sparkles className="size-4" /> อ่านคำนี้ให้ฟังหน่อย</DialogTitle><DialogDescription className="text-center">ป้ายหมายเลข {activeCard?.id}</DialogDescription></DialogHeader></div>
+          <div className="bg-muted/65 px-6 py-5"><DialogHeader><DialogTitle className="flex items-center justify-center gap-2 text-base text-primary"><Sparkles className="size-4" /> {activeCard?.imageUrl ? "รูปนี้คืออะไร" : "อ่านคำนี้ให้ฟังหน่อย"}</DialogTitle><DialogDescription className="text-center">ป้ายหมายเลข {activeCard?.id}</DialogDescription></DialogHeader></div>
           <div className="grid min-h-56 min-w-0 place-items-center overflow-hidden px-6 py-6">
             {activeCard?.imageUrl ? <div className="relative h-[min(58vh,32rem)] w-full"><Image src={activeCard.imageUrl} alt={activeCard.word} fill className="object-contain" sizes="(max-width: 768px) 90vw, 672px" priority /></div> : <AutoFitWord word={activeCard?.word ?? ""} />}
           </div>
-          <div className="grid grid-cols-2 gap-3 border-t bg-muted/35 p-4 sm:p-5"><Button className="h-12 bg-emerald-600 text-base hover:bg-emerald-700" onClick={() => mark("correct")}><Check className="mr-2 size-5" /> อ่านถูก</Button><Button variant="outline" className="h-12 border-amber-400 bg-amber-400/10 text-base text-foreground hover:bg-amber-400/20" onClick={() => mark("retry")}><RotateCcw className="mr-2 size-4" /> ผิด</Button></div>
+          <div className="grid grid-cols-2 gap-3 border-t bg-muted/35 p-4 sm:p-5"><Button className="h-12 bg-emerald-600 text-base hover:bg-emerald-700" onClick={() => mark("correct")}><Check className="mr-2 size-5" /> {activeCard?.imageUrl ? "ถูก" : "อ่านถูก"}</Button><Button variant="outline" className="h-12 border-amber-400 bg-amber-400/10 text-base text-foreground hover:bg-amber-400/20" onClick={() => mark("retry")}><RotateCcw className="mr-2 size-4" /> ผิด</Button></div>
         </DialogContent>
       </Dialog>
     </main>
