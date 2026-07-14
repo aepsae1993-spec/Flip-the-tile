@@ -56,22 +56,31 @@ export async function signupAction(_state: AuthState, formData: FormData): Promi
   if (password !== confirmPassword) return { error: "รหัสผ่านทั้งสองช่องไม่ตรงกัน" };
 
   const supabase = await createClient();
-  const origin = await getOrigin();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback?next=/pending`,
-      data: { display_name: displayName, username, school_name: schoolName },
+  const { data, error } = await supabase.functions.invoke("register-user", {
+    body: {
+      displayName,
+      username,
+      schoolName,
+      email,
+      password,
     },
   });
 
   if (error) {
-    if (error.message.toLowerCase().includes("already")) return { error: "อีเมลหรือชื่อโปรไฟล์นี้ถูกใช้งานแล้ว" };
+    let code = String((data as { code?: string } | null)?.code ?? "");
+    if ("context" in error && error.context instanceof Response) {
+      try {
+        const body = await error.context.clone().json() as { code?: string };
+        code = body.code ?? code;
+      } catch {
+        // Keep the generic message when the function response is not JSON.
+      }
+    }
+    if (code === "DUPLICATE_ACCOUNT") return { error: "อีเมลหรือชื่อโปรไฟล์นี้ถูกใช้งานแล้ว" };
+    if (code === "RATE_LIMIT") return { error: "มีการสมัครถี่เกินไป กรุณารอประมาณ 1 ชั่วโมงแล้วลองใหม่" };
     return { error: "สมัครสมาชิกไม่สำเร็จ กรุณาตรวจข้อมูลแล้วลองใหม่" };
   }
 
-  if (data.session && email === "aepsae1993@gmail.com") redirect("/dashboard");
   redirect(`/pending?email=${encodeURIComponent(email)}`);
 }
 
