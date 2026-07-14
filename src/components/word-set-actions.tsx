@@ -3,10 +3,11 @@
 import { useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LoaderCircle, MoreHorizontal, Pencil, Share2, Trash2, UserRoundX } from "lucide-react";
+import { CheckCircle2, LoaderCircle, MoreHorizontal, Pencil, Share2, Trash2, UserRoundX, UsersRound } from "lucide-react";
 import { deleteWordSetAction } from "@/app/create/actions";
 import {
   removeWordSetShareAction,
+  setWordSetMemberSharingAction,
   shareWordSetAction,
   type WordSetShare,
 } from "@/app/dashboard/actions";
@@ -28,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function WordSetActions({ id, title, shares = [] }: { id: string; title: string; shares?: WordSetShare[] }) {
+export function WordSetActions({ id, title, shares = [], sharedWithAll = false }: { id: string; title: string; shares?: WordSetShare[]; sharedWithAll?: boolean }) {
   const router = useRouter();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -36,6 +37,7 @@ export function WordSetActions({ id, title, shares = [] }: { id: string; title: 
   const [shareError, setShareError] = useState("");
   const [email, setEmail] = useState("");
   const [currentShares, setCurrentShares] = useState(shares);
+  const [allMembersShared, setAllMembersShared] = useState(sharedWithAll);
   const [pending, startTransition] = useTransition();
 
   function remove() {
@@ -75,6 +77,17 @@ export function WordSetActions({ id, title, shares = [] }: { id: string; title: 
     });
   }
 
+  function toggleAllMembers() {
+    setShareError("");
+    const nextValue = !allMembersShared;
+    startTransition(async () => {
+      const result = await setWordSetMemberSharingAction(id, nextValue);
+      if (result.error) return setShareError(result.error);
+      setAllMembersShared(nextValue);
+      router.refresh();
+    });
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -88,7 +101,7 @@ export function WordSetActions({ id, title, shares = [] }: { id: string; title: 
             <Link href={`/sets/${id}/edit`}><Pencil className="size-4" />แก้ไขชุดคำ</Link>
           </DropdownMenuItem>
           <DropdownMenuItem className="py-2" onSelect={() => setShareOpen(true)}>
-            <Share2 className="size-4" />แชร์ให้สมาชิก
+            <Share2 className="size-4" />แชร์ให้สมาชิกทุกคน
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" className="py-2" onSelect={() => setDeleteOpen(true)}>
             <Trash2 className="size-4" />ลบชุดคำ
@@ -101,9 +114,25 @@ export function WordSetActions({ id, title, shares = [] }: { id: string; title: 
           <form onSubmit={share}>
             <DialogHeader>
               <DialogTitle>แชร์ “{title}” ให้สมาชิก</DialogTitle>
-              <DialogDescription>กรอกอีเมลของสมาชิกที่สมัครและได้รับอนุมัติแล้ว สมาชิกจะเห็นชุดนี้ในแดชบอร์ดและนำไปเล่นได้</DialogDescription>
+              <DialogDescription>แชร์ครั้งเดียวให้สมาชิกที่ได้รับอนุมัติทุกคนเห็นในแดชบอร์ด โดยผู้ที่ไม่ได้เข้าสู่ระบบจะไม่เห็นชุดนี้</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-5">
+              <div className={`rounded-xl border p-4 ${allMembersShared ? "border-primary/35 bg-primary/5" : "bg-muted/25"}`}>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 text-primary">
+                    {allMembersShared ? <CheckCircle2 className="size-5" /> : <UsersRound className="size-5" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{allMembersShared ? "กำลังแชร์ให้สมาชิกทุกคน" : "แชร์ให้สมาชิกทุกคน"}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">สมาชิกที่ได้รับอนุมัติทั้งปัจจุบันและสมาชิกใหม่จะเปิดเล่นชุดนี้ได้</p>
+                  </div>
+                </div>
+                <Button type="button" className="mt-4 w-full" variant={allMembersShared ? "outline" : "default"} onClick={toggleAllMembers} disabled={pending}>
+                  {pending ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <UsersRound className="mr-2 size-4" />}
+                  {allMembersShared ? "หยุดแชร์ให้สมาชิกทุกคน" : "แชร์ให้สมาชิกทุกคน"}
+                </Button>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>หรือแชร์เฉพาะรายคน</span><span className="h-px flex-1 bg-border" /></div>
               <div className="space-y-2">
                 <Label htmlFor={`share-email-${id}`}>อีเมลสมาชิก</Label>
                 <Input id={`share-email-${id}`} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="teacher@example.com" autoComplete="email" required />

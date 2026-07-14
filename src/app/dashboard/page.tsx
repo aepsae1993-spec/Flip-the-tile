@@ -18,6 +18,8 @@ type DashboardSet = {
   content_type: "word" | "image";
   public_slug: string | null;
   is_published: boolean;
+  is_shared_with_members: boolean;
+  teacher_id: string;
   created_at: string;
   word_cards: Array<{ count: number }>;
 };
@@ -40,7 +42,7 @@ function WordSetTile({ set, shares, received = false }: { set: DashboardSet; sha
           <div className="flex shrink-0 items-center gap-1">
             {received
               ? <Badge variant="secondary"><Share2 className="mr-1 size-3" />ได้รับแชร์</Badge>
-              : <><Badge variant={set.is_published ? "default" : "secondary"}>{set.is_published ? "สาธารณะ" : "ส่วนตัว"}</Badge><WordSetActions id={set.id} title={set.title} shares={shares} /></>}
+              : <><Badge variant={set.is_published ? "default" : "secondary"}>{set.is_published ? "สาธารณะ" : set.is_shared_with_members ? "สมาชิกทุกคน" : "ส่วนตัว"}</Badge><WordSetActions id={set.id} title={set.title} shares={shares} sharedWithAll={set.is_shared_with_members} /></>}
           </div>
         </div>
         {received ? (
@@ -59,11 +61,12 @@ function WordSetTile({ set, shares, received = false }: { set: DashboardSet; sha
 export default async function DashboardPage() {
   const account = await requireApprovedUser();
   const supabase = await createClient();
-  const setFields = "id,title,description,content_type,public_slug,is_published,created_at,word_cards(count)";
-  const [ownResult, ownedSharesResult, receivedSharesResult] = await Promise.all([
+  const setFields = "id,title,description,content_type,public_slug,is_published,is_shared_with_members,teacher_id,created_at,word_cards(count)";
+  const [ownResult, ownedSharesResult, receivedSharesResult, allMemberSetsResult] = await Promise.all([
     supabase.from("word_sets").select(setFields).eq("teacher_id", account.user.id).order("created_at", { ascending: false }),
     supabase.from("word_set_shares").select("id,word_set_id,recipient_email").eq("owner_id", account.user.id).order("created_at", { ascending: true }),
     supabase.from("word_set_shares").select(`id,created_at,word_set:word_sets!word_set_shares_word_set_id_fkey(${setFields})`).eq("recipient_id", account.user.id).order("created_at", { ascending: false }),
+    supabase.from("word_sets").select(setFields).eq("is_shared_with_members", true).neq("teacher_id", account.user.id).order("created_at", { ascending: false }),
   ]);
 
   const sets = (ownResult.data ?? []) as DashboardSet[];
@@ -73,10 +76,15 @@ export default async function DashboardPage() {
     items.push({ id: share.id, recipientEmail: share.recipient_email });
     shareMap.set(share.word_set_id, items);
   }
-  const sharedSets = (receivedSharesResult.data ?? []).flatMap((row) => {
+  const directlySharedSets = (receivedSharesResult.data ?? []).flatMap((row) => {
     const value = Array.isArray(row.word_set) ? row.word_set[0] : row.word_set;
     return value ? [value as DashboardSet] : [];
   });
+  const sharedSetMap = new Map<string, DashboardSet>();
+  for (const set of [...(allMemberSetsResult.data ?? []) as DashboardSet[], ...directlySharedSets]) {
+    sharedSetMap.set(set.id, set);
+  }
+  const sharedSets = [...sharedSetMap.values()];
 
   const totalWords = sets.reduce((sum, set) => sum + (set.word_cards?.[0]?.count ?? 0), 0);
   const name = account.profile?.display_name ?? account.user.email ?? "คุณครู";
@@ -123,7 +131,7 @@ export default async function DashboardPage() {
           <CardHeader className="border-b"><CardTitle className="flex items-center gap-2"><Share2 className="size-5 text-primary" />ชุดคำที่สมาชิกแชร์ให้ฉัน</CardTitle></CardHeader>
           <CardContent className="p-5">
             {!sharedSets.length ? (
-              <div className="py-10 text-center"><Share2 className="mx-auto size-9 text-muted-foreground" /><p className="mt-3 font-medium">ยังไม่มีชุดคำที่ได้รับแชร์</p><p className="mt-1 text-sm text-muted-foreground">เมื่อสมาชิกแชร์ชุดคำให้อีเมลของคุณ ชุดนั้นจะแสดงที่นี่</p></div>
+              <div className="py-10 text-center"><Share2 className="mx-auto size-9 text-muted-foreground" /><p className="mt-3 font-medium">ยังไม่มีชุดคำที่ได้รับแชร์</p><p className="mt-1 text-sm text-muted-foreground">เมื่อสมาชิกแชร์ชุดคำให้สมาชิกทุกคนหรือแชร์ให้คุณโดยตรง ชุดนั้นจะแสดงที่นี่</p></div>
             ) : <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{sharedSets.map((set) => <WordSetTile key={set.id} set={set} received />)}</div>}
           </CardContent>
         </Card>

@@ -9,6 +9,25 @@ export type WordSetShare = {
   recipientEmail: string;
 };
 
+export async function setWordSetMemberSharingAction(wordSetId: string, enabled: boolean) {
+  const account = await requireApprovedUser();
+  if (!wordSetId) return { error: "ไม่พบชุดคำ" };
+
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("word_sets")
+    .update({ is_shared_with_members: enabled }, { count: "exact" })
+    .eq("id", wordSetId)
+    .eq("teacher_id", account.user.id);
+
+  if (error || count !== 1) {
+    return { error: "เปลี่ยนการแชร์ไม่สำเร็จ กรุณาลองใหม่" };
+  }
+
+  revalidatePath("/dashboard");
+  return { enabled };
+}
+
 export async function shareWordSetAction(wordSetId: string, email: string) {
   await requireApprovedUser();
   const normalizedEmail = email.trim().toLowerCase();
