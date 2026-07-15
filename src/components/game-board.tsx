@@ -33,16 +33,17 @@ function AutoFitWord({ word }: { word: string }) {
     const container = wordRef.current.parentElement;
 
     function fitWord() {
-      element.style.fontSize = "96px";
+      const maximumSize = 160;
+      element.style.fontSize = `${maximumSize}px`;
       element.style.whiteSpace = "nowrap";
       element.style.wordBreak = "normal";
       const availableWidth = element.clientWidth - 8;
-      const fittedSize = Math.floor(96 * (availableWidth / element.scrollWidth));
+      const fittedSize = Math.floor(maximumSize * (availableWidth / element.scrollWidth));
 
-      if (fittedSize >= 24) {
-        element.style.fontSize = `${Math.min(96, fittedSize)}px`;
+      if (fittedSize >= 32) {
+        element.style.fontSize = `${Math.min(maximumSize, fittedSize)}px`;
       } else {
-        element.style.fontSize = "24px";
+        element.style.fontSize = "32px";
         element.style.whiteSpace = "normal";
         element.style.wordBreak = "break-all";
       }
@@ -175,12 +176,12 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl overflow-hidden border-0 p-0 duration-0 sm:rounded-[2rem]">
-          <div className="bg-muted/65 px-6 py-5"><DialogHeader><DialogTitle className="flex items-center justify-center gap-2 text-base text-primary"><Sparkles className="size-4" /> {activeCard?.imageUrl ? "รูปนี้คืออะไร" : "อ่านคำนี้ให้ฟังหน่อย"}</DialogTitle><DialogDescription className="text-center">ป้ายหมายเลข {activeCard?.id}</DialogDescription></DialogHeader></div>
-          <div className="grid min-h-56 min-w-0 place-items-center overflow-hidden px-6 py-6">
-            {activeCard?.imageUrl ? <div className="relative h-[min(58vh,32rem)] w-full"><Image src={activeCard.imageUrl} alt={activeCard.word} fill unoptimized loading="eager" decoding="sync" className="object-contain" sizes="(max-width: 768px) 90vw, 672px" /></div> : <AutoFitWord word={activeCard?.word ?? ""} />}
+        <DialogContent className="h-[min(94dvh,52rem)] w-[calc(100vw-1rem)] max-w-none grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden border-0 p-0 duration-0 sm:w-[min(92vw,68rem)] sm:max-w-[68rem] sm:rounded-[2rem]">
+          <div className="bg-muted/65 px-6 py-5 sm:px-10 sm:py-6"><DialogHeader><DialogTitle className="flex items-center justify-center gap-2 text-base text-primary sm:text-lg"><Sparkles className="size-5" /> {activeCard?.imageUrl ? "รูปนี้คืออะไร" : "อ่านคำนี้ให้ฟังหน่อย"}</DialogTitle><DialogDescription className="text-center sm:text-base">ป้ายหมายเลข {activeCard?.id}</DialogDescription></DialogHeader></div>
+          <div className="grid min-h-0 min-w-0 place-items-center overflow-hidden px-5 py-5 sm:px-10 sm:py-8">
+            {activeCard?.imageUrl ? <div className="relative size-full min-h-0"><Image src={activeCard.imageUrl} alt={activeCard.word} fill unoptimized loading="eager" decoding="sync" className="object-contain" sizes="(max-width: 640px) 96vw, (max-width: 1280px) 92vw, 1088px" /></div> : <AutoFitWord word={activeCard?.word ?? ""} />}
           </div>
-          <div className="grid grid-cols-2 gap-3 border-t bg-muted/35 p-4 sm:p-5"><Button className="h-12 bg-emerald-600 text-base hover:bg-emerald-700" onClick={() => mark("correct")}><Check className="mr-2 size-5" /> {activeCard?.imageUrl ? "ถูก" : "อ่านถูก"}</Button><Button variant="outline" className="h-12 border-amber-400 bg-amber-400/10 text-base text-foreground hover:bg-amber-400/20" onClick={() => mark("retry")}><RotateCcw className="mr-2 size-4" /> ผิด</Button></div>
+          <div className="grid grid-cols-2 gap-3 border-t bg-muted/35 p-4 sm:gap-5 sm:p-6"><Button className="h-12 bg-emerald-600 text-base hover:bg-emerald-700 sm:h-14 sm:text-lg" onClick={() => mark("correct")}><Check className="mr-2 size-5" /> {activeCard?.imageUrl ? "ถูก" : "อ่านถูก"}</Button><Button variant="outline" className="h-12 border-amber-400 bg-amber-400/10 text-base text-foreground hover:bg-amber-400/20 sm:h-14 sm:text-lg" onClick={() => mark("retry")}><RotateCcw className="mr-2 size-4" /> ผิด</Button></div>
         </DialogContent>
       </Dialog>
     </main>
