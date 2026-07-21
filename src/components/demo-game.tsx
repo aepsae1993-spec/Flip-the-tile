@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FlaskConical, InfinityIcon, Layers3, Play } from "lucide-react";
+import { FlaskConical, Layers3, Play } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { GameBoard } from "@/components/game-board";
 import { ThemeSwitcher } from "@/components/theme-provider";
@@ -10,21 +10,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MAX_CARD_COUNT, MIN_CARD_COUNT } from "@/lib/game-limits";
 
 const sampleWords = "โรงเรียน\nปลา\nม้า\nบ้าน\nทะเล\nห้องเรียน\nดอกไม้\nพระอาทิตย์\nสายรุ้ง\nครอบครัว\nความสุข\nขอบคุณ";
 
 type DemoConfig = { title: string; words: string[] };
-type DemoCount = 12 | 20 | "all";
+type DemoCount = number | "all";
 
 export function DemoGame() {
   const [title, setTitle] = useState("ชุดคำทดลอง");
   const [rawWords, setRawWords] = useState(sampleWords);
   const [count, setCount] = useState<DemoCount>(12);
   const [game, setGame] = useState<DemoConfig | null>(null);
-  const allWords = useMemo(
+  const enteredWords = useMemo(
     () => rawWords.split(/\r?\n|,/).map((word) => word.trim()).filter(Boolean),
     [rawWords],
   );
+  const allWords = useMemo(() => enteredWords.slice(0, MAX_CARD_COUNT), [enteredWords]);
   const words = count === "all" ? allWords : allWords.slice(0, count);
 
   if (game) {
@@ -52,15 +54,16 @@ export function DemoGame() {
             </div>
             <div className="space-y-3">
               <Label className="flex items-center gap-2"><Layers3 className="size-4 text-primary" />จำนวนแผ่นป้าย</Label>
-              <div className="grid grid-cols-3 gap-3">
-                {([12, 20] as const).map((option) => (
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+                {([12, 20, 30, 40, 50] as const).map((option) => (
                   <Button key={option} type="button" variant={count === option ? "default" : "outline"} className="h-12 text-base" onClick={() => setCount(option)}>
                     {option} คำ
                   </Button>
                 ))}
-                <Button type="button" variant={count === "all" ? "default" : "outline"} className="h-12 text-base" onClick={() => setCount("all")}><InfinityIcon className="mr-1.5 size-4" /> ทั้งหมด</Button>
+                <Button type="button" variant={count === "all" ? "default" : "outline"} className="h-12 text-base" onClick={() => setCount("all")}><Layers3 className="mr-1.5 size-4" /> ทั้งหมด</Button>
               </div>
-              <p className="text-xs text-muted-foreground">เลือก “ทั้งหมด” เพื่อใช้ทุกคำที่กรอก เหมาะสำหรับโหมดวงล้อและไม่จำกัดจำนวน</p>
+              <div className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3"><Label htmlFor="demo-custom-count" className="shrink-0">กำหนดเอง</Label><Input id="demo-custom-count" type="number" inputMode="numeric" min={MIN_CARD_COUNT} max={MAX_CARD_COUNT} value={count === "all" ? "" : count} placeholder="2–50" onChange={(event) => { if (event.target.value) setCount(Math.min(MAX_CARD_COUNT, Math.max(MIN_CARD_COUNT, Math.round(Number(event.target.value))))); }} /><span className="shrink-0 text-sm text-muted-foreground">คำ</span></div>
+              <p className="text-xs text-muted-foreground">กำหนดได้ทุกจำนวนตั้งแต่ 2–50 เช่น 42 หรือ 45 คำ หรือเลือก “ทั้งหมด” เพื่อใช้ตามที่กรอกสูงสุด 50 คำ</p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3"><Label htmlFor="demo-words">คำสำหรับเล่น</Label><span className={`text-sm font-medium ${isReady ? "text-emerald-600" : "text-muted-foreground"}`}>{count === "all" ? `${words.length} คำ` : `${words.length} / ${count} คำ`}</span></div>
@@ -68,6 +71,7 @@ export function DemoGame() {
               {count !== "all" && words.length < count && <p className="text-sm text-amber-700">เพิ่มอีก {count - words.length} คำเพื่อให้ครบ {count} แผ่น</p>}
               {count !== "all" && allWords.length > count && <p className="text-sm text-muted-foreground">ระบบจะใช้ {count} คำแรกตามจำนวนที่เลือก</p>}
               {count === "all" && words.length < 2 && <p className="text-sm text-amber-700">เพิ่มอย่างน้อย 2 คำเพื่อเริ่มเล่น</p>}
+              {enteredWords.length > MAX_CARD_COUNT && <p className="text-sm text-amber-700">รองรับสูงสุด {MAX_CARD_COUNT} คำ ระบบจะใช้ {MAX_CARD_COUNT} คำแรก</p>}
             </div>
             <Button type="button" size="lg" className="w-full rounded-full" disabled={!isReady} onClick={() => setGame({ title: title.trim() || "ชุดคำทดลอง", words })}>
               <Play className="mr-2 size-5" /> เริ่มทดลองเล่น {words.length} แผ่น

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireApprovedUser } from "@/lib/auth";
+import { MAX_CARD_COUNT, MIN_CARD_COUNT } from "@/lib/game-limits";
 import { createClient } from "@/lib/supabase/server";
 
 export type SetContentType = "word" | "image";
@@ -38,7 +39,7 @@ function cardImagePath(value: string | null | undefined) {
 
 function normalizeCards(input: CreateSetInput, userId: string) {
   if (!(["word", "image"] as string[]).includes(input.contentType)) return null;
-  if (input.cards.length < 2) return null;
+  if (input.cards.length < MIN_CARD_COUNT || input.cards.length > MAX_CARD_COUNT) return null;
 
   const cards = input.cards.map((card, index) => ({
     wordText: card.wordText.trim().slice(0, 160) || (input.contentType === "image" ? `รูปที่ ${index + 1}` : ""),

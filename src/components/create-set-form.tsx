@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Eye,
   ImageIcon,
-  InfinityIcon,
   Layers3,
   LoaderCircle,
   Sparkles,
@@ -23,9 +22,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MAX_CARD_COUNT, MIN_CARD_COUNT } from "@/lib/game-limits";
 import { createClient } from "@/lib/supabase/client";
 
-const countOptions = [6, 9, 12, 16, 20, 30];
+const countOptions = [6, 9, 12, 16, 20, 30, 40, 50];
 const exampleWords = "โรงเรียน\nปลา\nม้า\nบ้าน\nทะเล\nห้องเรียน\nดอกไม้\nพระอาทิตย์\nสายรุ้ง\nครอบครัว\nความสุข\nขอบคุณ";
 
 type InitialCard = { wordText: string; imageUrl: string | null };
@@ -80,7 +80,7 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
   const router = useRouter();
   const previewUrls = useRef(new Set<string>());
   const initialCards = initialSet?.cards ?? [];
-  const initialCount = initialCards.length || 12;
+  const initialCount = Math.min(initialCards.length || 12, MAX_CARD_COUNT);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -92,7 +92,8 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
   const [useAllWords, setUseAllWords] = useState(false);
   const [rawWords, setRawWords] = useState(initialCards.map((card) => card.wordText).join("\n") || exampleWords);
   const [imageEntries, setImageEntries] = useState<ImageEntry[]>(() => blankImageEntries(initialCount, initialCards));
-  const allWords = useMemo(() => rawWords.split(/\r?\n|,/).map((word) => word.trim()).filter(Boolean), [rawWords]);
+  const enteredWords = useMemo(() => rawWords.split(/\r?\n|,/).map((word) => word.trim()).filter(Boolean), [rawWords]);
+  const allWords = useMemo(() => enteredWords.slice(0, MAX_CARD_COUNT), [enteredWords]);
   const words = useMemo(() => useAllWords ? allWords : allWords.slice(0, count), [allWords, count, useAllWords]);
   const imageReadyCount = imageEntries.slice(0, count).filter((entry) => entry.file || entry.imageUrl).length;
   const isReady = title.trim().length > 0
@@ -109,9 +110,10 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
   }, []);
 
   function chooseCount(nextCount: number) {
+    const safeCount = Math.min(MAX_CARD_COUNT, Math.max(MIN_CARD_COUNT, Math.round(nextCount)));
     setUseAllWords(false);
-    setCount(nextCount);
-    setImageEntries((current) => Array.from({ length: nextCount }, (_, index) => current[index] ?? {
+    setCount(safeCount);
+    setImageEntries((current) => Array.from({ length: safeCount }, (_, index) => current[index] ?? {
       label: `รูปที่ ${index + 1}`,
       imageUrl: "",
     }));
@@ -251,8 +253,9 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
 
           <div className="space-y-3">
             <Label>จำนวนแผ่นป้าย</Label>
-            <div className="flex flex-wrap gap-2">{[...new Set([...countOptions, count])].sort((a, b) => a - b).map((option) => <Button key={option} type="button" variant={!useAllWords && count === option ? "default" : "outline"} className="min-w-14" onClick={() => chooseCount(option)}>{option}</Button>)}{contentType === "word" && <Button type="button" variant={useAllWords ? "default" : "outline"} onClick={() => setUseAllWords(true)}><InfinityIcon className="mr-1.5 size-4" /> ใช้ทุกคำ</Button>}</div>
-            {contentType === "word" && <p className="text-xs text-muted-foreground">“ใช้ทุกคำ” จะนำทุกบรรทัดไปเล่น เหมาะสำหรับวงล้อและไม่จำกัดจำนวนคำ</p>}
+            <div className="flex flex-wrap gap-2">{countOptions.map((option) => <Button key={option} type="button" variant={!useAllWords && count === option ? "default" : "outline"} className="min-w-14" onClick={() => chooseCount(option)}>{option}</Button>)}{contentType === "word" && <Button type="button" variant={useAllWords ? "default" : "outline"} onClick={() => setUseAllWords(true)}><Layers3 className="mr-1.5 size-4" /> ใช้ทุกคำ</Button>}</div>
+            <div className="flex max-w-xs items-center gap-3 rounded-xl border bg-muted/30 p-3"><Label htmlFor="custom-count" className="shrink-0">กำหนดเอง</Label><Input id="custom-count" type="number" inputMode="numeric" min={MIN_CARD_COUNT} max={MAX_CARD_COUNT} value={useAllWords ? "" : count} placeholder="2–50" onChange={(event) => { if (event.target.value) chooseCount(Number(event.target.value)); }} /><span className="shrink-0 text-sm text-muted-foreground">รายการ</span></div>
+            {contentType === "word" && <p className="text-xs text-muted-foreground">กำหนดจำนวนใดก็ได้ตั้งแต่ 2–50 เช่น 42 หรือ 45 คำ ส่วน “ใช้ทุกคำ” จะใช้ตามที่กรอกสูงสุด 50 คำ</p>}
           </div>
 
           {contentType === "word" ? (
@@ -261,6 +264,7 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
               <Textarea id="words" value={rawWords} onChange={(event) => setRawWords(event.target.value)} className="min-h-64 resize-y leading-7" />
               {!useAllWords && words.length < count && <p className="text-sm text-amber-700">เพิ่มอีก {count - words.length} คำเพื่อให้ครบจำนวนแผ่น</p>}
               {useAllWords && words.length < 2 && <p className="text-sm text-amber-700">เพิ่มอย่างน้อย 2 คำเพื่อบันทึกชุดคำ</p>}
+              {enteredWords.length > MAX_CARD_COUNT && <p className="text-sm text-amber-700">รองรับสูงสุด {MAX_CARD_COUNT} คำ ระบบจะใช้ {MAX_CARD_COUNT} คำแรก</p>}
             </div>
           ) : (
             <div className="space-y-4">
