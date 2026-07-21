@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FlaskConical, Layers3, Play } from "lucide-react";
+import { FlaskConical, InfinityIcon, Layers3, Play } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { GameBoard } from "@/components/game-board";
 import { ThemeSwitcher } from "@/components/theme-provider";
@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 const sampleWords = "โรงเรียน\nปลา\nม้า\nบ้าน\nทะเล\nห้องเรียน\nดอกไม้\nพระอาทิตย์\nสายรุ้ง\nครอบครัว\nความสุข\nขอบคุณ";
 
 type DemoConfig = { title: string; words: string[] };
-type DemoCount = 12 | 20;
+type DemoCount = 12 | 20 | "all";
 
 export function DemoGame() {
   const [title, setTitle] = useState("ชุดคำทดลอง");
@@ -25,13 +25,13 @@ export function DemoGame() {
     () => rawWords.split(/\r?\n|,/).map((word) => word.trim()).filter(Boolean),
     [rawWords],
   );
-  const words = allWords.slice(0, count);
+  const words = count === "all" ? allWords : allWords.slice(0, count);
 
   if (game) {
     return <GameBoard title={game.title} words={game.words} onEditWords={() => setGame(null)} />;
   }
 
-  const isReady = words.length === count;
+  const isReady = count === "all" ? words.length >= 2 : words.length === count;
 
   return (
     <main className="min-h-screen bg-muted/35">
@@ -52,19 +52,22 @@ export function DemoGame() {
             </div>
             <div className="space-y-3">
               <Label className="flex items-center gap-2"><Layers3 className="size-4 text-primary" />จำนวนแผ่นป้าย</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {([12, 20] as const).map((option) => (
                   <Button key={option} type="button" variant={count === option ? "default" : "outline"} className="h-12 text-base" onClick={() => setCount(option)}>
                     {option} คำ
                   </Button>
                 ))}
+                <Button type="button" variant={count === "all" ? "default" : "outline"} className="h-12 text-base" onClick={() => setCount("all")}><InfinityIcon className="mr-1.5 size-4" /> ทั้งหมด</Button>
               </div>
+              <p className="text-xs text-muted-foreground">เลือก “ทั้งหมด” เพื่อใช้ทุกคำที่กรอก เหมาะสำหรับโหมดวงล้อและไม่จำกัดจำนวน</p>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3"><Label htmlFor="demo-words">คำสำหรับเล่น</Label><span className={`text-sm font-medium ${isReady ? "text-emerald-600" : "text-muted-foreground"}`}>{words.length} / {count} คำ</span></div>
+              <div className="flex items-center justify-between gap-3"><Label htmlFor="demo-words">คำสำหรับเล่น</Label><span className={`text-sm font-medium ${isReady ? "text-emerald-600" : "text-muted-foreground"}`}>{count === "all" ? `${words.length} คำ` : `${words.length} / ${count} คำ`}</span></div>
               <Textarea id="demo-words" value={rawWords} onChange={(event) => setRawWords(event.target.value)} className="min-h-72 resize-y text-base leading-8" placeholder={'โรงเรียน\nคุณครู\nห้องเรียน'} />
-              {words.length < count && <p className="text-sm text-amber-700">เพิ่มอีก {count - words.length} คำเพื่อให้ครบ {count} แผ่น</p>}
-              {allWords.length > count && <p className="text-sm text-muted-foreground">ระบบจะใช้ {count} คำแรกตามจำนวนที่เลือก</p>}
+              {count !== "all" && words.length < count && <p className="text-sm text-amber-700">เพิ่มอีก {count - words.length} คำเพื่อให้ครบ {count} แผ่น</p>}
+              {count !== "all" && allWords.length > count && <p className="text-sm text-muted-foreground">ระบบจะใช้ {count} คำแรกตามจำนวนที่เลือก</p>}
+              {count === "all" && words.length < 2 && <p className="text-sm text-amber-700">เพิ่มอย่างน้อย 2 คำเพื่อเริ่มเล่น</p>}
             </div>
             <Button type="button" size="lg" className="w-full rounded-full" disabled={!isReady} onClick={() => setGame({ title: title.trim() || "ชุดคำทดลอง", words })}>
               <Play className="mr-2 size-5" /> เริ่มทดลองเล่น {words.length} แผ่น

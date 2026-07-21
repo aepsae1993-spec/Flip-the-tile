@@ -3,16 +3,18 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Expand, House, PencilLine, RotateCcw, Shuffle, Sparkles, Volume2 } from "lucide-react";
+import { Check, Disc3, Expand, Grid2X2, House, MinusCircle, PencilLine, RotateCcw, Shuffle, Sparkles, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { ThemeSwitcher } from "@/components/theme-provider";
 import { CardThemeSwitcher, useCardTheme } from "@/components/card-theme-switcher";
+import { SpinningWheel } from "@/components/spinning-wheel";
 import { SCHOOL_LOGO_URL, SCHOOL_NAME } from "@/lib/school";
 
 type CardStatus = "new" | "correct" | "retry";
+type GameMode = "tiles" | "wheel";
 type GameBoardCard = { word: string; imageUrl?: string | null };
 type GameCard = { id: number; word: string; imageUrl: string | null; opened: boolean; status: CardStatus };
 
@@ -68,6 +70,8 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
   });
   const [activeId, setActiveId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [gameMode, setGameMode] = useState<GameMode>("tiles");
+  const [wheelIds, setWheelIds] = useState<number[]>(() => cards.map((card) => card.id));
   const imageUrls = useRef(cards.flatMap((card) => card.imageUrl ? [card.imageUrl] : []));
   const { theme: cardTheme } = useCardTheme();
 
@@ -84,12 +88,20 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
   }, []);
 
   const activeCard = cards.find((card) => card.id === activeId) ?? null;
+  const wheelIdSet = useMemo(() => new Set(wheelIds), [wheelIds]);
+  const wheelItems = useMemo(() => cards.filter((card) => wheelIdSet.has(card.id)).map((card) => ({ id: card.id, word: card.word })), [cards, wheelIdSet]);
+  const restoreWheelItems = useCallback(() => setWheelIds(cards.map((card) => card.id)), [cards]);
   const reviewed = cards.filter((card) => card.status !== "new").length;
   const correct = cards.filter((card) => card.status === "correct").length;
   const progress = cards.length ? (reviewed / cards.length) * 100 : 0;
 
   const openCard = useCallback((id: number) => {
     setCards((current) => current.map((card) => card.id === id ? { ...card, opened: true } : card));
+    setActiveId(id);
+    setDialogOpen(true);
+  }, []);
+
+  const openWheelResult = useCallback((id: number) => {
     setActiveId(id);
     setDialogOpen(true);
   }, []);
@@ -108,8 +120,19 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
   }
 
   function resetGame() {
-    setCards((current) => shuffle(current.map<GameCard>((card) => ({ ...card, opened: false, status: "new" }))).map((card, index) => ({ ...card, id: index + 1 })));
+    const nextCards = shuffle(cards.map<GameCard>((card) => ({ ...card, opened: false, status: "new" }))).map((card, index) => ({ ...card, id: index + 1 }));
+    setCards(nextCards);
+    setWheelIds(nextCards.map((card) => card.id));
     setActiveId(null);
+    setDialogOpen(false);
+  }
+
+  function keepWheelItem() {
+    setDialogOpen(false);
+  }
+
+  function removeWheelItem() {
+    if (activeId !== null) setWheelIds((current) => current.filter((id) => id !== activeId));
     setDialogOpen(false);
   }
 
@@ -157,31 +180,51 @@ export function GameBoard({ title: initialTitle, words: initialWords, cards: ini
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-2"><Badge variant="secondary" className="rounded-full px-3 py-1.5">ทั้งหมด {cards.length}</Badge><Badge className="rounded-full bg-emerald-600 px-3 py-1.5 hover:bg-emerald-600">อ่านถูก {correct}</Badge></div>
-          <Button onClick={randomCard} className="rounded-full shadow-md shadow-primary/20"><Shuffle className="mr-2 size-4" /> สุ่มแผ่นป้าย</Button>
+          <div className="inline-flex rounded-full border bg-background p-1 shadow-sm" aria-label="เลือกโหมดเกม">
+            <Button type="button" size="sm" variant={gameMode === "tiles" ? "default" : "ghost"} className="rounded-full" onClick={() => { setGameMode("tiles"); setDialogOpen(false); }}><Grid2X2 className="mr-1.5 size-4" /> เปิดป้าย</Button>
+            <Button type="button" size="sm" variant={gameMode === "wheel" ? "default" : "ghost"} className="rounded-full" onClick={() => { setGameMode("wheel"); setDialogOpen(false); }}><Disc3 className="mr-1.5 size-4" /> วงล้อ</Button>
+          </div>
+          {gameMode === "tiles" && <Button onClick={randomCard} className="rounded-full shadow-md shadow-primary/20"><Shuffle className="mr-2 size-4" /> สุ่มแผ่นป้าย</Button>}
         </div>
-        <div className={`grid gap-3 sm:gap-4 ${boardLayout.grid}`}>
-          {cards.map((card) => (
-            <button key={card.id} type="button" onClick={() => openCard(card.id)} aria-label={card.opened ? `เปิดคำว่า ${card.word}` : `เปิดป้ายหมายเลข ${card.id}`} className={`card-perspective min-h-24 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 ${boardLayout.card} ${card.opened ? "card-flipped" : ""}`}>
-              <span className="card-inner relative block size-full">
-                <span className={`card-face absolute inset-0 grid place-items-center overflow-hidden rounded-2xl border-2 text-3xl font-bold shadow-sm transition-[transform,box-shadow] hover:-translate-y-1 hover:shadow-lg sm:text-4xl ${cardTheme.front}`}><span className={`absolute -right-5 -top-5 size-16 rounded-full ${cardTheme.decoration}`} /><span className={`absolute bottom-3 left-3 size-1.5 rounded-full ${cardTheme.decoration}`} /><span className="relative drop-shadow-sm">{card.id}</span></span>
-                <span className={`card-face card-back absolute inset-0 grid min-w-0 place-items-center overflow-hidden rounded-2xl px-2 text-center font-bold shadow-lg ${card.status === "correct" ? "bg-emerald-600 text-white" : card.status === "retry" ? "bg-amber-400 text-amber-950" : cardTheme.back}`}>
-                  {card.imageUrl ? <span className="relative block size-full overflow-hidden rounded-xl bg-white/95"><Image src={card.imageUrl} alt={card.word} fill unoptimized loading="eager" decoding="async" className="object-contain p-1.5" sizes="(max-width: 640px) 45vw, 240px" /></span> : <span className="max-w-full break-words text-[clamp(.85rem,2.6vw,2rem)] leading-tight [overflow-wrap:anywhere]">{card.word}</span>}
-                  {card.status === "correct" && <Check className="absolute right-2 top-2 z-10 size-5 rounded-full bg-emerald-600 p-0.5 text-white" />}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
+
+        {gameMode === "wheel" ? (
+          <SpinningWheel
+            items={wheelItems}
+            totalCount={cards.length}
+            onResult={openWheelResult}
+            onRestoreAll={restoreWheelItems}
+          />
+        ) : (
+          <>
+            <div className="mb-5 flex gap-2"><Badge variant="secondary" className="rounded-full px-3 py-1.5">ทั้งหมด {cards.length}</Badge><Badge className="rounded-full bg-emerald-600 px-3 py-1.5 hover:bg-emerald-600">อ่านถูก {correct}</Badge></div>
+            <div className={`grid gap-3 sm:gap-4 ${boardLayout.grid}`}>
+              {cards.map((card) => (
+                <button key={card.id} type="button" onClick={() => openCard(card.id)} aria-label={card.opened ? `เปิดคำว่า ${card.word}` : `เปิดป้ายหมายเลข ${card.id}`} className={`card-perspective min-h-24 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 ${boardLayout.card} ${card.opened ? "card-flipped" : ""}`}>
+                  <span className="card-inner relative block size-full">
+                    <span className={`card-face absolute inset-0 grid place-items-center overflow-hidden rounded-2xl border-2 text-3xl font-bold shadow-sm transition-[transform,box-shadow] hover:-translate-y-1 hover:shadow-lg sm:text-4xl ${cardTheme.front}`}><span className={`absolute -right-5 -top-5 size-16 rounded-full ${cardTheme.decoration}`} /><span className={`absolute bottom-3 left-3 size-1.5 rounded-full ${cardTheme.decoration}`} /><span className="relative drop-shadow-sm">{card.id}</span></span>
+                    <span className={`card-face card-back absolute inset-0 grid min-w-0 place-items-center overflow-hidden rounded-2xl px-2 text-center font-bold shadow-lg ${card.status === "correct" ? "bg-emerald-600 text-white" : card.status === "retry" ? "bg-amber-400 text-amber-950" : cardTheme.back}`}>
+                      {card.imageUrl ? <span className="relative block size-full overflow-hidden rounded-xl bg-white/95"><Image src={card.imageUrl} alt={card.word} fill unoptimized loading="eager" decoding="async" className="object-contain p-1.5" sizes="(max-width: 640px) 45vw, 240px" /></span> : <span className="max-w-full break-words text-[clamp(.85rem,2.6vw,2rem)] leading-tight [overflow-wrap:anywhere]">{card.word}</span>}
+                      {card.status === "correct" && <Check className="absolute right-2 top-2 z-10 size-5 rounded-full bg-emerald-600 p-0.5 text-white" />}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="h-[min(94dvh,52rem)] w-[calc(100vw-1rem)] max-w-none grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden border-0 p-0 duration-0 sm:w-[min(92vw,68rem)] sm:max-w-[68rem] sm:rounded-[2rem]">
-          <div className="bg-muted/65 px-6 py-5 sm:px-10 sm:py-6"><DialogHeader><DialogTitle className="flex items-center justify-center gap-2 text-base text-primary sm:text-lg"><Sparkles className="size-5" /> {activeCard?.imageUrl ? "รูปนี้คืออะไร" : "อ่านคำนี้ให้ฟังหน่อย"}</DialogTitle><DialogDescription className="text-center sm:text-base">ป้ายหมายเลข {activeCard?.id}</DialogDescription></DialogHeader></div>
+          <div className="bg-muted/65 px-6 py-5 sm:px-10 sm:py-6"><DialogHeader><DialogTitle className="flex items-center justify-center gap-2 text-base text-primary sm:text-lg"><Sparkles className="size-5" /> {gameMode === "wheel" ? "วงล้อสุ่มได้" : activeCard?.imageUrl ? "รูปนี้คืออะไร" : "อ่านคำนี้ให้ฟังหน่อย"}</DialogTitle><DialogDescription className="text-center sm:text-base">{gameMode === "wheel" ? "เลือกได้ว่าจะเก็บไว้หรือเอาออกเฉพาะรอบนี้" : `ป้ายหมายเลข ${activeCard?.id}`}</DialogDescription></DialogHeader></div>
           <div className="grid min-h-0 min-w-0 place-items-center overflow-hidden px-5 py-5 sm:px-10 sm:py-8">
             {activeCard?.imageUrl ? <div className="relative size-full min-h-0"><Image src={activeCard.imageUrl} alt={activeCard.word} fill unoptimized loading="eager" decoding="sync" className="object-contain" sizes="(max-width: 640px) 96vw, (max-width: 1280px) 92vw, 1088px" /></div> : <AutoFitWord word={activeCard?.word ?? ""} />}
           </div>
-          <div className="grid grid-cols-2 gap-3 border-t bg-muted/35 p-4 sm:gap-5 sm:p-6"><Button className="h-12 bg-emerald-600 text-base hover:bg-emerald-700 sm:h-14 sm:text-lg" onClick={() => mark("correct")}><Check className="mr-2 size-5" /> {activeCard?.imageUrl ? "ถูก" : "อ่านถูก"}</Button><Button variant="outline" className="h-12 border-amber-400 bg-amber-400/10 text-base text-foreground hover:bg-amber-400/20 sm:h-14 sm:text-lg" onClick={() => mark("retry")}><RotateCcw className="mr-2 size-4" /> ผิด</Button></div>
+          {gameMode === "wheel" ? (
+            <div className="grid grid-cols-2 gap-3 border-t bg-muted/35 p-4 sm:gap-5 sm:p-6"><Button className="h-12 bg-emerald-600 text-sm hover:bg-emerald-700 sm:h-14 sm:text-lg" onClick={keepWheelItem}><RotateCcw className="mr-2 size-5" /> เก็บไว้หมุนต่อ</Button><Button variant="outline" className="h-12 border-amber-400 bg-amber-400/10 text-sm text-foreground hover:bg-amber-400/20 sm:h-14 sm:text-lg" onClick={removeWheelItem}><MinusCircle className="mr-2 size-5" /> นำออกจากรอบนี้</Button></div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 border-t bg-muted/35 p-4 sm:gap-5 sm:p-6"><Button className="h-12 bg-emerald-600 text-base hover:bg-emerald-700 sm:h-14 sm:text-lg" onClick={() => mark("correct")}><Check className="mr-2 size-5" /> {activeCard?.imageUrl ? "ถูก" : "อ่านถูก"}</Button><Button variant="outline" className="h-12 border-amber-400 bg-amber-400/10 text-base text-foreground hover:bg-amber-400/20 sm:h-14 sm:text-lg" onClick={() => mark("retry")}><RotateCcw className="mr-2 size-4" /> ผิด</Button></div>
+          )}
         </DialogContent>
       </Dialog>
     </main>

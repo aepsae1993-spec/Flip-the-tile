@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Eye,
   ImageIcon,
+  InfinityIcon,
   Layers3,
   LoaderCircle,
   Sparkles,
@@ -88,15 +89,14 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
   const [grade, setGrade] = useState(initialSet?.grade ?? "ป.1–3");
   const [contentType, setContentType] = useState<SetContentType>(initialSet?.contentType ?? "word");
   const [count, setCount] = useState(initialCount);
+  const [useAllWords, setUseAllWords] = useState(false);
   const [rawWords, setRawWords] = useState(initialCards.map((card) => card.wordText).join("\n") || exampleWords);
   const [imageEntries, setImageEntries] = useState<ImageEntry[]>(() => blankImageEntries(initialCount, initialCards));
-  const words = useMemo(
-    () => rawWords.split(/\r?\n|,/).map((word) => word.trim()).filter(Boolean).slice(0, count),
-    [rawWords, count],
-  );
+  const allWords = useMemo(() => rawWords.split(/\r?\n|,/).map((word) => word.trim()).filter(Boolean), [rawWords]);
+  const words = useMemo(() => useAllWords ? allWords : allWords.slice(0, count), [allWords, count, useAllWords]);
   const imageReadyCount = imageEntries.slice(0, count).filter((entry) => entry.file || entry.imageUrl).length;
   const isReady = title.trim().length > 0
-    && (contentType === "word" ? words.length === count : imageReadyCount === count);
+    && (contentType === "word" ? (useAllWords ? words.length >= 2 : words.length === count) : imageReadyCount === count);
 
   useEffect(() => {
     if (!saved) return;
@@ -109,6 +109,7 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
   }, []);
 
   function chooseCount(nextCount: number) {
+    setUseAllWords(false);
     setCount(nextCount);
     setImageEntries((current) => Array.from({ length: nextCount }, (_, index) => current[index] ?? {
       label: `รูปที่ ${index + 1}`,
@@ -241,7 +242,7 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
                 <span className="grid size-10 place-items-center rounded-xl bg-background shadow-sm"><Type className="size-5" /></span>
                 <span><strong className="block">โหมดคำ</strong><span className="text-xs text-muted-foreground">พลิกแล้วแสดงข้อความ</span></span>
               </Button>
-              <Button type="button" variant="outline" onClick={() => setContentType("image")} className={`h-auto justify-start gap-3 rounded-2xl border-2 p-4 text-left transition ${contentType === "image" ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/40"}`}>
+              <Button type="button" variant="outline" onClick={() => { setContentType("image"); setUseAllWords(false); }} className={`h-auto justify-start gap-3 rounded-2xl border-2 p-4 text-left transition ${contentType === "image" ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/40"}`}>
                 <span className="grid size-10 place-items-center rounded-xl bg-background shadow-sm"><ImageIcon className="size-5" /></span>
                 <span><strong className="block">โหมดรูปภาพ</strong><span className="text-xs text-muted-foreground">พลิกแล้วแสดงรูปเต็มใบ</span></span>
               </Button>
@@ -250,14 +251,16 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
 
           <div className="space-y-3">
             <Label>จำนวนแผ่นป้าย</Label>
-            <div className="flex flex-wrap gap-2">{[...new Set([...countOptions, count])].sort((a, b) => a - b).map((option) => <Button key={option} type="button" variant={count === option ? "default" : "outline"} className="min-w-14" onClick={() => chooseCount(option)}>{option}</Button>)}</div>
+            <div className="flex flex-wrap gap-2">{[...new Set([...countOptions, count])].sort((a, b) => a - b).map((option) => <Button key={option} type="button" variant={!useAllWords && count === option ? "default" : "outline"} className="min-w-14" onClick={() => chooseCount(option)}>{option}</Button>)}{contentType === "word" && <Button type="button" variant={useAllWords ? "default" : "outline"} onClick={() => setUseAllWords(true)}><InfinityIcon className="mr-1.5 size-4" /> ใช้ทุกคำ</Button>}</div>
+            {contentType === "word" && <p className="text-xs text-muted-foreground">“ใช้ทุกคำ” จะนำทุกบรรทัดไปเล่น เหมาะสำหรับวงล้อและไม่จำกัดจำนวนคำ</p>}
           </div>
 
           {contentType === "word" ? (
             <div className="space-y-2">
-              <div className="flex items-center justify-between"><Label htmlFor="words">คำศัพท์ (หนึ่งคำต่อหนึ่งบรรทัด)</Label><span className={`text-sm font-medium ${words.length === count ? "text-emerald-600" : "text-muted-foreground"}`}>{words.length} / {count} คำ</span></div>
+              <div className="flex items-center justify-between"><Label htmlFor="words">คำศัพท์ (หนึ่งคำต่อหนึ่งบรรทัด)</Label><span className={`text-sm font-medium ${(useAllWords ? words.length >= 2 : words.length === count) ? "text-emerald-600" : "text-muted-foreground"}`}>{useAllWords ? `${words.length} คำ` : `${words.length} / ${count} คำ`}</span></div>
               <Textarea id="words" value={rawWords} onChange={(event) => setRawWords(event.target.value)} className="min-h-64 resize-y leading-7" />
-              {words.length < count && <p className="text-sm text-amber-700">เพิ่มอีก {count - words.length} คำเพื่อให้ครบจำนวนแผ่น</p>}
+              {!useAllWords && words.length < count && <p className="text-sm text-amber-700">เพิ่มอีก {count - words.length} คำเพื่อให้ครบจำนวนแผ่น</p>}
+              {useAllWords && words.length < 2 && <p className="text-sm text-amber-700">เพิ่มอย่างน้อย 2 คำเพื่อบันทึกชุดคำ</p>}
             </div>
           ) : (
             <div className="space-y-4">
@@ -299,7 +302,7 @@ export function CreateSetForm({ initialSet }: { initialSet?: InitialSet }) {
         <Card className="overflow-hidden border-blue-100">
           <CardHeader className="bg-blue-50/70"><CardTitle className="flex items-center gap-2 text-base"><Eye className="size-4 text-primary" /> ตัวอย่างแผ่นป้าย</CardTitle></CardHeader>
           <CardContent className="p-5">
-            <div className="grid grid-cols-3 gap-2.5">{Array.from({ length: Math.min(count, 12) }, (_, index) => {
+            <div className="grid grid-cols-3 gap-2.5">{Array.from({ length: Math.min(contentType === "word" && useAllWords ? words.length : count, 12) }, (_, index) => {
               const preview = imageEntries[index]?.previewUrl || imageEntries[index]?.imageUrl;
               return <div key={index} className="relative grid aspect-square place-items-center overflow-hidden rounded-xl border border-blue-200 bg-blue-50 font-bold text-blue-700">{contentType === "image" && preview ? <Image src={preview} alt="" fill unoptimized={preview.startsWith("blob:")} className="object-contain p-1" sizes="100px" /> : index + 1}</div>;
             })}</div>

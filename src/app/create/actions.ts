@@ -38,7 +38,7 @@ function cardImagePath(value: string | null | undefined) {
 
 function normalizeCards(input: CreateSetInput, userId: string) {
   if (!(["word", "image"] as string[]).includes(input.contentType)) return null;
-  if (input.cards.length < 2 || input.cards.length > 100) return null;
+  if (input.cards.length < 2) return null;
 
   const cards = input.cards.map((card, index) => ({
     wordText: card.wordText.trim().slice(0, 160) || (input.contentType === "image" ? `รูปที่ ${index + 1}` : ""),
